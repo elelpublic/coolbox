@@ -92,26 +92,6 @@ gretty {
 }
 
 
-// WIKI (online doku) -----------------------------------------------------------
-
-// pack wiki into zip ...
-task zipwiki( type: Zip ) {
-  classifier = 'wiki'
-  from 'src/main/wiki'
-  include '**/*'
-  archiveName 'excomm.wikipack'
-}
-
-task wikipack( type: Copy ) {
-  from 'build/distributions/excomm.wikipack'
-  into 'build/classes/main'
-}
-wikipack.dependsOn zipwiki
-
-// make sure, its in classes dir
-classes.dependsOn wikipack
-
-
 // TEST -----------------------------------------------------------
 
 test.doFirst {
@@ -189,7 +169,7 @@ war {
 
 def openWebsite = {
   new Timer().runAfter( 2000 ) {
-    java.awt.Desktop.desktop.browse new URL( "http://localhost:" + gretty.httpPort + "/excomm" ).toURI()
+    java.awt.Desktop.desktop.browse new URL( "http://localhost:" + gretty.httpPort + "/coolbox" ).toURI()
   }
 }
 

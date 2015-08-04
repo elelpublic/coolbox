@@ -21,10 +21,16 @@
     this.hPixel = Math.ceil( this.h / spriteConfig.h );
     this.penDown = false;
 
-    this.clear = function() {
-      for( y = 0; y < this.h; y++ ) {
+    this.clear = function( xStart, yStart, xEnd, yEnd ) {
+
+      xStart = xStart ? xStart : 0;
+      yStart = yStart ? yStart : 0;
+      xEnd = xEnd ? xEnd : me.w;
+      yEnd = yEnd ? yEnd : me.h;
+
+      for( y = yStart; y < yEnd; y++ ) {
         var white = y % 2 == 0;
-        for( x = 0; x < this.w; x++ ) {
+        for( x = xStart; x < xEnd; x++ ) {
           this.context.fillStyle = white ? '#ffffff' : '#aaaaaa';
           this.context.fillRect( x, y, 1, 1 );
           white = !white;
@@ -36,13 +42,24 @@
     this.click = function( mouseEvent ) {
       var x = mouseEvent.offsetX;
       var y = mouseEvent.offsetY;
-      me.paint( x, y );
+      if( mouseEvent.shiftKey ) {
+        me.erase( x, y )
+      }
+      else {
+        me.paint( x, y );
+      }
     }
 
     this.paint = function( x, y ) {
       var xP = Math.floor( x / me.wPixel );
       var yP = Math.floor( y / me.hPixel );
       me.context.fillRect( xP * me.wPixel, yP * me.hPixel, me.wPixel, me.hPixel );
+    }
+
+    this.erase = function( x, y ) {
+      var xP = Math.floor( x / me.wPixel );
+      var yP = Math.floor( y / me.hPixel );
+      me.clear( xP * me.wPixel, yP * me.hPixel, xP * me.wPixel + me.wPixel, yP * me.hPixel + me.hPixel );
     }
 
     this.mousemove = function( mouseEvent ) {
