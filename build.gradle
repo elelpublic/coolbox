@@ -1,0 +1,276 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'war'
+apply plugin: 'groovy'
+apply plugin: 'ivy-publish'
+// apply plugin: 'jetty'
+//apply from: 'gretty.plugin'
+
+// PROJECT ---------------------------------------------------------
+
+group = 'com.infodesire'
+version = '0.3.0'
+//httpPort = 8081
+
+
+eclipse {
+  pathVariables(
+    'GRADLE_USER_HOME': gradle.gradleUserHomeDir
+  )
+}
+
+
+// DEPENDENCIES & BUILD ---------------------------------------------------------
+
+repositories {
+
+    mavenCentral()
+    jcenter {
+        url "http://jcenter.bintray.com/" // use http instead of https (prevent CERTs)
+    }
+
+    ivy {
+      // there is a lot of legacy to adhere to here:
+      url 'http://edge/s/repository/maven'
+      layout 'pattern' , {
+            artifact '[organisation].[module]/[type]s/[artifact]-[revision](.[ext])'
+        }
+    }
+
+    // ews is on this repo:
+    maven {
+      url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+
+    //mavenLocal()
+
+}
+
+
+configurations.all {
+  // check for updates in SNAPSHOT dependencies every build
+  resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+
+dependencies {
+  compile ()
+}
+
+
+targetCompatibility = 1.6
+sourceCompatibility = 1.6
+
+//compileJava {
+//  sourceCompatibility = 1.6
+//  targetCompatibility = 1.6
+//}
+
+
+// GRETTY ---- plugin for testing with webserver -----------------------------------------
+
+buildscript {
+  repositories {
+    jcenter {
+        url "http://jcenter.bintray.com/" // use http instead of https (prevent CERTs)
+    }
+  }
+
+  dependencies {
+    classpath 'org.akhikhl.gretty:gretty:+'
+  }
+}
+
+apply plugin: 'org.akhikhl.gretty'
+
+gretty {
+  httpPort   = 8081
+  debugPort  = 5001
+  debugSuspend = false // true: wait for debugger before starting webapp
+  //servletContainer = 'tomcat8'
+  jvmArgs = [ '-XX:MaxPermSize=256m' ]
+}
+
+
+// WIKI (online doku) -----------------------------------------------------------
+
+// pack wiki into zip ...
+task zipwiki( type: Zip ) {
+  classifier = 'wiki'
+  from 'src/main/wiki'
+  include '**/*'
+  archiveName 'excomm.wikipack'
+}
+
+task wikipack( type: Copy ) {
+  from 'build/distributions/excomm.wikipack'
+  into 'build/classes/main'
+}
+wikipack.dependsOn zipwiki
+
+// make sure, its in classes dir
+classes.dependsOn wikipack
+
+
+// TEST -----------------------------------------------------------
+
+test.doFirst {
+  new Timer().runAfter( 2000 ) {
+    java.awt.Desktop.desktop.browse new File( "build/reports/tests/index.html" ).toURI()
+  }
+}
+
+
+// INTEGRATION TESTS ---------------------------------------------
+
+sourceSets {
+  integration {
+      groovy {
+          srcDir 'src/integration/groovy'
+      }
+      resources {
+          srcDir 'src/integration/resources'
+      }
+      compileClasspath += main.output + test.output
+      runtimeClasspath += main.output + test.output
+  }
+}
+
+configurations {
+  integrationCompile.extendsFrom testCompile
+  integrationRuntime.extendsFrom testRuntime
+}
+
+
+// don't call this task 'integrationTest' because that will clash with grettys
+// idea of an integration test
+task integration(type: Test) {
+  testClassesDir = sourceSets.integration.output.classesDir
+  classpath = sourceSets.integration.runtimeClasspath
+  reports.junitXml.destination = file( 'build/reports/integration/' )
+  reports.html.destination = file( 'build/reports/integration/' )
+}
+
+integration.doFirst {
+  new Timer().runAfter( 1000 ) {
+    java.awt.Desktop.desktop.browse new File( "build/reports/integration/index.html" ).toURI()
+  }
+}
+
+
+// WEBAPP ---------------------------------------------------------
+
+// run bower to install webapp dependencies
+task bower(type: Exec) {
+  outputs.dir "bower_components"
+  executable "bower"
+  args "install"
+}
+
+war.dependsOn bower
+
+def warArchiveName = 'excomm.war'
+
+war {
+	archiveName = warArchiveName
+	from( '.' ) {
+		include 'bower_components/angular/angular*.js'
+		include 'bower_components/angular-route/angular-route*.js'
+		include 'bower_components/jquery/jquery*.js'
+		include 'bower_components/jquery/jquery*.map'
+		include 'bower_components/bootstrap/docs/assets/css/**'
+		include 'bower_components/bootstrap/docs/assets/img/examples/**'
+    exclude 'bower_components/bootstrap/docs/assets/img/examples/'
+		//include 'bower_components/lodash/dist/**'
+		//include 'bower_components/restangular/dist/**'
+		include 'bower_components/js-base64/base64*.js'
+	}
+}
+
+def openWebsite = {
+  new Timer().runAfter( 2000 ) {
+    java.awt.Desktop.desktop.browse new URL( "http://localhost:" + gretty.httpPort + "/excomm" ).toURI()
+  }
+}
+
+gretty {
+  onStart {
+      openWebsite()
+  }
+  extraResourceBase '.' // <-- allows bower_components to be used in gretty's webapp
+}
+
+//jettyRun.doFirst openWebsite
+//jettyRunWar.doFirst openWebsite
+
+
+// JAVADOC ----------------------------------------------------------
+
+
+javadoc << {
+  java.awt.Desktop.desktop.browse new File( "build/docs/javadoc/index.html" ).toURI()
+}
+
+// show javadoc / groovydoc in browser
+task doc( dependsOn: groovydoc ) {
+  doLast {
+    java.awt.Desktop.desktop.browse new File( "build/docs/groovydoc/index.html" ).toURI()
+  }
+}
+
+
+
+// PUBLISH --------------------------------------------------------
+
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'src'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+  archives sourcesJar
+  archives javadocJar
+  archives war
+}
+
+publishing {
+  publications {
+    ivyJava( IvyPublication ) {
+      from components.java
+      artifact(sourcesJar) {
+                type "source"
+                conf "runtime"
+            }
+    }
+    ivyWeb( IvyPublication ) {
+      from components.web
+    }
+  }
+  repositories {
+    ivy {
+      // there is a lot of legacy to adhere to here:
+        url 'file://s/repository/maven'
+        layout 'pattern' , {
+              artifact '[organisation].[module]/[type]s/[artifact]-[revision](.[ext])'
+          }
+      }
+  }
+}
+
+
+// ----------------------- play -------------------
+
+task play << {
+  configurations.each { c ->
+    //println c.name
+    c.each { f ->
+      println c.name + '  ' + f.name
+    }
+  }
+}
