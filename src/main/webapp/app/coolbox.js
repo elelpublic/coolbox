@@ -28,15 +28,23 @@
       xEnd = xEnd ? xEnd : me.w;
       yEnd = yEnd ? yEnd : me.h;
 
+      var whiteStart = yStart % 2 == 0;
+      if( xStart % 2 != 0 ) {
+        whiteStart = !whiteStart;
+      }
+
       for( y = yStart; y < yEnd; y++ ) {
-        var white = y % 2 == 0;
+        var white = whiteStart;
+        whiteStart = !whiteStart;
         for( x = xStart; x < xEnd; x++ ) {
           this.context.fillStyle = white ? '#ffffff' : '#aaaaaa';
           this.context.fillRect( x, y, 1, 1 );
           white = !white;
         }
       }
+
       this.context.fillStyle = '#000000';
+
     };
 
     this.click = function( mouseEvent ) {
