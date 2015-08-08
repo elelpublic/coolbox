@@ -1,15 +1,20 @@
 coolbox = window.coolbox;
 
-coolbox.Sprite = function( imageData ) {
+coolbox.Sprite = function( canvas, x, y, w, h ) {
 
   var me = this;
-  this.imageData = imageData;
+  this.x = x;
+  this.y = y;
+  this.w = w;
+  this.h = h;
+  this.context = canvas.getContext( '2d' );
+  this.imageData = me.context.getImageData( x, y, w, h );    
 
-  this.w = function() {
+  this.getW = function() {
     return me.imageData.width;
   }
 
-  this.h = function() {
+  this.getH = function() {
     return me.imageData.height;
   }
 
@@ -27,6 +32,10 @@ coolbox.Sprite = function( imageData ) {
     me.imageData.data[ ( ( y * ( me.imageData.width * 4 ) ) + ( x * 4 ) ) + 1 ] = g;
     me.imageData.data[ ( ( y * ( me.imageData.width * 4 ) ) + ( x * 4 ) ) + 2 ] = b;
     me.imageData.data[ ( ( y * ( me.imageData.width * 4 ) ) + ( x * 4 ) ) + 3 ] = a;
+  }
+  
+  this.draw = function() {
+    me.context.putImageData( me.imageData, x, y );
   }
 
 }

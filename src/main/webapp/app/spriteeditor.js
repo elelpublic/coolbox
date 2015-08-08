@@ -7,10 +7,10 @@ coolbox.SpriteEditor = function( id, sprite ) {
   this.canvas = document.getElementById( id );
   this.context = this.canvas.getContext( "2d" );
   this.sprite = sprite;
-  this.w = this.sprite.w;
-  this.h = this.sprite.h;
-  this.wPixel = Math.ceil( this.w / sprite.w );
-  this.hPixel = Math.ceil( this.h / sprite.h );
+  this.w = this.canvas.width;
+  this.h = this.canvas.height;
+  this.wPixel = Math.ceil( this.w / sprite.getW() );
+  this.hPixel = Math.ceil( this.h / sprite.getH() );
   this.penDown = false;
 
   this.clear = function( xStart, yStart, xEnd, yEnd ) {
@@ -34,14 +34,13 @@ coolbox.SpriteEditor = function( id, sprite ) {
         white = !white;
       }
     }
-
+/*
     for( y = 0; y < me.h; y++ ) {
       for( x = 0; x < me.w; x++ ) {
         sprite.setPixel( x, y, 255, 255, 255, 255 );
       }
     }
-
-
+*/
     this.context.fillStyle = '#000000';
 
   };
@@ -61,14 +60,16 @@ coolbox.SpriteEditor = function( id, sprite ) {
     var xP = Math.floor( x / me.wPixel );
     var yP = Math.floor( y / me.hPixel );
     me.context.fillRect( xP * me.wPixel, yP * me.hPixel, me.wPixel, me.hPixel );
-    sprite.setPixel( xp, yp, 0, 0, 0, 0 );
+    me.sprite.setPixel( xP, yP, 0, 0, 0, 255 );
+    me.sprite.draw();
   }
 
   this.erase = function( x, y ) {
     var xP = Math.floor( x / me.wPixel );
     var yP = Math.floor( y / me.hPixel );
     me.clear( xP * me.wPixel, yP * me.hPixel, xP * me.wPixel + me.wPixel, yP * me.hPixel + me.hPixel );
-    sprite.setPixel( xp, yp, 255, 255, 255, 255 );
+    me.sprite.setPixel( xP, yP, 255, 255, 255, 255 );
+    me.sprite.draw();
   }
 
   this.mousemove = function( mouseEvent ) {
