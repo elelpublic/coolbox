@@ -48,36 +48,43 @@ coolbox.SpriteEditor = function( id, sprite ) {
   this.click = function( mouseEvent ) {
     var x = mouseEvent.offsetX;
     var y = mouseEvent.offsetY;
-    if( mouseEvent.shiftKey ) {
-      me.erase( x, y )
+    var xP = Math.floor( x / me.wPixel );
+    var yP = Math.floor( y / me.hPixel );
+    me.invert( xP, yP );
+  }
+  
+  this.invert = function( xP, yP ) {
+    //if( mouseEvent.shiftKey ) {
+    if( me.sprite.getPixel( xP, yP ).a == 0 ) {
+      me.paint( xP, yP );
     }
     else {
-      me.paint( x, y );
+      me.erase( xP, yP )
     }
   }
 
-  this.paint = function( x, y ) {
-    var xP = Math.floor( x / me.wPixel );
-    var yP = Math.floor( y / me.hPixel );
+  this.paint = function( xP, yP ) {
     me.context.fillRect( xP * me.wPixel, yP * me.hPixel, me.wPixel, me.hPixel );
     me.sprite.setPixel( xP, yP, 0, 0, 0, 255 );
     me.sprite.draw();
   }
 
-  this.erase = function( x, y ) {
-    var xP = Math.floor( x / me.wPixel );
-    var yP = Math.floor( y / me.hPixel );
+  this.erase = function( xP, yP ) {
     me.clear( xP * me.wPixel, yP * me.hPixel, xP * me.wPixel + me.wPixel, yP * me.hPixel + me.hPixel );
-    me.sprite.setPixel( xP, yP, 255, 255, 255, 255 );
+    me.sprite.setPixel( xP, yP, 255, 255, 255, 0 );
     me.sprite.draw();
   }
 
   this.mousemove = function( mouseEvent ) {
     var x = mouseEvent.offsetX;
     var y = mouseEvent.offsetY;
+    var xP = Math.floor( x / me.wPixel );
+    var yP = Math.floor( y / me.hPixel );
     if( me.penDown ) {
-      me.paint( x, y );
-      //console.log( 'mousemove ' + x + ':' + y );
+        if( !me.lastdraw || me.lastdraw.xP != xP || me.lastdraw.yP != yP ) {
+            me.invert( xP, yP );
+            me.lastdraw = { xP: xP, yP: yP };
+        }
     }
   }
 
