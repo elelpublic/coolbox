@@ -12,6 +12,7 @@ coolbox.SpriteEditor = function( id, sprite ) {
   this.wPixel = Math.ceil( this.w / sprite.getW() );
   this.hPixel = Math.ceil( this.h / sprite.getH() );
   this.penDown = false;
+  this.hasMoved = false;
 
   this.clear = function( xStart, yStart, xEnd, yEnd ) {
 
@@ -46,50 +47,65 @@ coolbox.SpriteEditor = function( id, sprite ) {
   };
 
   this.click = function( mouseEvent ) {
-    var x = mouseEvent.offsetX;
-    var y = mouseEvent.offsetY;
-    var xP = Math.floor( x / me.wPixel );
-    var yP = Math.floor( y / me.hPixel );
-    me.invert( xP, yP );
-  }
-  
-  this.invert = function( xP, yP ) {
-    //if( mouseEvent.shiftKey ) {
-    if( me.sprite.getPixel( xP, yP ).a == 0 ) {
-      me.paint( xP, yP );
+    if( me.hasMoved ) {
+        me.hasMoved = false;
     }
     else {
-      me.erase( xP, yP )
+        me.invert( me.getPixel( mouseEvent ) );
+    }
+  }
+  
+  this.invert = function( p ) {
+    //if( mouseEvent.shiftKey ) {
+    if( me.sprite.getPixel( p.x, p.y ).a == 0 ) {
+      me.paint( p );
+    }
+    else {
+      me.erase( p )
     }
   }
 
-  this.paint = function( xP, yP ) {
-    me.context.fillRect( xP * me.wPixel, yP * me.hPixel, me.wPixel, me.hPixel );
-    me.sprite.setPixel( xP, yP, 0, 0, 0, 255 );
+  this.paint = function( p ) {
+    me.context.fillRect( p.x * me.wPixel, p.y * me.hPixel, me.wPixel, me.hPixel );
+    me.sprite.setPixel( p.x, p.y, 0, 0, 0, 255 );
     me.sprite.draw();
   }
 
-  this.erase = function( xP, yP ) {
-    me.clear( xP * me.wPixel, yP * me.hPixel, xP * me.wPixel + me.wPixel, yP * me.hPixel + me.hPixel );
-    me.sprite.setPixel( xP, yP, 255, 255, 255, 0 );
+  this.erase = function( p ) {
+    me.clear( p.x * me.wPixel, p.y * me.hPixel, p.x * me.wPixel + me.wPixel, p.y * me.hPixel + me.hPixel );
+    me.sprite.setPixel( p.x, p.y, 255, 255, 255, 0 );
     me.sprite.draw();
   }
 
   this.mousemove = function( mouseEvent ) {
+    var p = me.getPixel( mouseEvent );
+    if( me.penDown ) {
+        if( !me.lastdraw || me.lastdraw.x != p.x || me.lastdraw.y != p.y ) {
+            if( me.paintMode ) {
+                me.paint( p );
+            }
+            else {
+                me.erase( p );
+            }
+            me.lastdraw = p;
+            me.hasMoved = true;
+        }
+    }
+  }
+  
+  this.getPixel = function( mouseEvent ) {
     var x = mouseEvent.offsetX;
     var y = mouseEvent.offsetY;
-    var xP = Math.floor( x / me.wPixel );
-    var yP = Math.floor( y / me.hPixel );
-    if( me.penDown ) {
-        if( !me.lastdraw || me.lastdraw.xP != xP || me.lastdraw.yP != yP ) {
-            me.invert( xP, yP );
-            me.lastdraw = { xP: xP, yP: yP };
-        }
+    return { 
+      x: Math.floor( x / me.wPixel ),
+      y: Math.floor( y / me.hPixel )
     }
   }
 
   this.mousedown = function( mouseEvent ) {
     me.penDown = true;
+    var p = me.getPixel( mouseEvent );
+    me.paintMode = me.sprite.getPixel( p.x, p.y ).a == 0;
   }
 
   this.mouseup = function( mouseEvent ) {
