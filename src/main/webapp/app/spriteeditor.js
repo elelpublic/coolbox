@@ -78,8 +78,8 @@ coolbox.SpriteEditor = function( id, sprite ) {
   }
 
   this.mousemove = function( mouseEvent ) {
-    var p = me.getPixel( mouseEvent );
     if( me.penDown ) {
+        var p = me.getPixel( mouseEvent );
         if( !me.lastdraw || me.lastdraw.x != p.x || me.lastdraw.y != p.y ) {
             if( me.paintMode ) {
                 me.paint( p );
@@ -94,6 +94,7 @@ coolbox.SpriteEditor = function( id, sprite ) {
   }
   
   this.getPixel = function( mouseEvent ) {
+    mouseEvent = coolbox.fixEvent( mouseEvent );
     var x = mouseEvent.offsetX;
     var y = mouseEvent.offsetY;
     return { 
@@ -101,7 +102,7 @@ coolbox.SpriteEditor = function( id, sprite ) {
       y: Math.floor( y / me.hPixel )
     }
   }
-
+  
   this.mousedown = function( mouseEvent ) {
     me.penDown = true;
     var p = me.getPixel( mouseEvent );
