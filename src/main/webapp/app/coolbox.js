@@ -3,6 +3,10 @@
     var coolbox = {};
     window.coolbox = coolbox;
     
+    /** 
+    Mouseevent does not support offsetX and offsetY in Firefox.
+    This is a fix from http://www.jacklmoore.com/notes/mouse-position/
+    */
     coolbox.fixEvent = function( e ) {
         
         e = e || window.event;
